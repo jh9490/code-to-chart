@@ -5,6 +5,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // DOM Elements
+  const appThemeSelect = document.getElementById('app-theme-select');
   const mermaidInput = document.getElementById('mermaid-input');
   const lineNumbers = document.getElementById('line-numbers');
   const templateSelect = document.getElementById('template-select');
@@ -572,6 +573,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Theme & Style Handlers
+  if (appThemeSelect) {
+    appThemeSelect.addEventListener('change', () => {
+      const mode = appThemeSelect.value;
+      document.body.classList.remove('theme-miro', 'theme-dark');
+      document.body.classList.add(`theme-${mode}`);
+
+      if (mode === 'miro') {
+        if (canvasBgSelect) canvasBgSelect.value = 'miro-grid';
+        if (themeSelect) themeSelect.value = 'neutral';
+        if (lookSelect) lookSelect.value = 'handDrawn';
+      } else {
+        if (canvasBgSelect) canvasBgSelect.value = 'dark-grid';
+        if (themeSelect) themeSelect.value = 'dark';
+      }
+
+      applyCanvasBackdrop();
+      initMermaid(themeSelect.value, lookSelect.value);
+      processDiagram();
+      showToast(`App theme: ${mode === 'miro' ? '🟡 Miro Whiteboard' : '🌙 Dark Cosmic'}`);
+    });
+  }
+
   themeSelect.addEventListener('change', () => {
     initMermaid(themeSelect.value, lookSelect.value);
     applyCanvasBackdrop();

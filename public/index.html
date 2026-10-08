@@ -10,24 +10,32 @@
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="theme-dark">
+<body class="theme-miro">
   <div id="app" class="app-layout">
     
     <!-- Top Navigation Bar -->
     <header class="app-header">
       <div class="header-brand">
         <div class="brand-logo-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
         <div class="brand-text">
-          <h1 class="brand-title">Mermaid Parser <span class="badge-studio">Studio</span></h1>
-          <span class="brand-subtitle">Node.js Graph Engine & AST Inspector</span>
+          <h1 class="brand-title">Mermaid Parser <span class="badge-studio">Miro Board</span></h1>
+          <span class="brand-subtitle">Whiteboard Graph Engine & AST Studio</span>
         </div>
       </div>
 
       <div class="header-controls">
+        <div class="control-group">
+          <label for="app-theme-select" class="control-label">App Theme:</label>
+          <select id="app-theme-select" class="custom-select">
+            <option value="miro" selected>🟡 Miro Whiteboard</option>
+            <option value="dark">🌙 Dark Cosmic</option>
+          </select>
+        </div>
+
         <div class="control-group">
           <label for="template-select" class="control-label">Preset:</label>
           <select id="template-select" class="custom-select" title="Choose template">
@@ -62,12 +70,12 @@
         </div>
 
         <div class="control-group">
-          <label for="theme-select" class="control-label">Theme:</label>
+          <label for="theme-select" class="control-label">Diagram Theme:</label>
           <select id="theme-select" class="custom-select">
             <option value="neutral" selected>Whiteboard Neutral</option>
-            <option value="dark">Dark Slate</option>
             <option value="default">Classic Light</option>
             <option value="forest">Forest Green</option>
+            <option value="dark">Dark Slate</option>
             <option value="base">Minimal Base</option>
           </select>
         </div>
