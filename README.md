@@ -112,3 +112,4 @@ mairmaid-parser/
     └── js/
         └── app.js        # Client controller (pan/zoom, AST inspector, exports)
 ```
+# mermaid-chart-parser
