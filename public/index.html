@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mermaid Parser & Visual Studio | Node.js Diagram Engine</title>
+  <meta name="description" content="A powerful Node.js and JavaScript visual tool to parse Mermaid charts into structured AST JSON, inspect graph topology, and render interactive high-resolution diagrams.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="theme-dark">
+  <div id="app" class="app-layout">
+    
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">Mermaid Parser <span class="badge-studio">Studio</span></h1>
+          <span class="brand-subtitle">Node.js Graph Engine & AST Inspector</span>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="control-group">
+          <label for="template-select" class="control-label">Preset:</label>
+          <select id="template-select" class="custom-select" title="Choose template">
+            <option value="" disabled>Select diagram template...</option>
+            <option value="miro_sketch" selected>✏️ Miro Hand-Drawn Flow (Sketch)</option>
+            <option value="microservices">Cloud Microservices Architecture</option>
+            <option value="oauth2_sequence">OAuth 2.0 Auth Flow (Sequence)</option>
+            <option value="ecommerce_erd">E-Commerce Schema (ERD)</option>
+            <option value="order_lifecycle">Order Processing (State)</option>
+            <option value="class_architecture">Domain Model (Class)</option>
+            <option value="git_workflow">Git Flow (GitGraph)</option>
+            <option value="market_pie">Market Share (Pie Chart)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="look-select" class="control-label">Look / Style:</label>
+          <select id="look-select" class="custom-select">
+            <option value="handDrawn" selected>✏️ Hand-Drawn (Miro / Sketch)</option>
+            <option value="classic">📐 Classic Crisp</option>
+            <option value="neo">💎 Neo Modern</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="canvas-bg-select" class="control-label">Canvas:</label>
+          <select id="canvas-bg-select" class="custom-select">
+            <option value="miro-grid" selected>⬜ Miro Whiteboard Grid</option>
+            <option value="dark-grid">⬛ Dark Chalkboard Grid</option>
+            <option value="plain-white">◽ Plain White</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="theme-select" class="control-label">Theme:</label>
+          <select id="theme-select" class="custom-select">
+            <option value="neutral" selected>Whiteboard Neutral</option>
+            <option value="dark">Dark Slate</option>
+            <option value="default">Classic Light</option>
+            <option value="forest">Forest Green</option>
+            <option value="base">Minimal Base</option>
+          </select>
+        </div>
+
+        <div class="header-actions">
+          <button id="btn-parse-server" class="btn btn-secondary" title="Execute server-side Node.js parser">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            Server Parse
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Studio Split View -->
+    <main class="studio-container">
+      
+      <!-- Left Panel: Editor & Code Tools -->
+      <section class="panel editor-panel" id="editor-section">
+        <div class="panel-header">
+          <div class="panel-title-area">
+            <span class="panel-icon">📝</span>
+            <h2 class="panel-heading">Mermaid Editor</h2>
+            <span id="syntax-status-badge" class="status-badge status-valid">
+              <span class="status-dot"></span> <span id="status-text">Valid Syntax</span>
+            </span>
+          </div>
+
+          <div class="editor-header-actions">
+            <button id="btn-beautify" class="btn-icon" title="Format indentation">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+            </button>
+            <button id="btn-clear" class="btn-icon" title="Clear editor">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+            <button id="btn-copy-code" class="btn-icon" title="Copy Mermaid code">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Insert Snippets Toolbar -->
+        <div class="snippets-toolbar">
+          <span class="snippets-label">Insert:</span>
+          <button class="snippet-btn" data-insert="A[Box Node] --> B[Target Node]">Node + Edge</button>
+          <button class="snippet-btn" data-insert="Decision{Is Valid?} -->|Yes| OK[Success]&#10;Decision -->|No| Fail[Error]">Decision</button>
+          <button class="snippet-btn" data-insert="DB[(Database Cluster)]">Database</button>
+          <button class="snippet-btn" data-insert="subgraph GroupName [&quot;Group Title&quot;]&#10;    ItemA&#10;    ItemB&#10;end">Subgraph</button>
+          <button class="snippet-btn" data-insert="Alice->>Bob: Sync Request&#10;Bob-->>Alice: Async Response">Sequence</button>
+        </div>
+
+        <!-- Code Editor Area with Line Numbers -->
+        <div class="editor-workspace">
+          <div id="line-numbers" class="line-numbers">1</div>
+          <textarea id="mermaid-input" class="code-textarea" spellcheck="false" placeholder="Write or paste your Mermaid chart here..."></textarea>
+        </div>
+
+        <!-- Error Feedback Bar -->
+        <div id="error-banner" class="error-banner hidden">
+          <div class="error-icon">⚠️</div>
+          <div class="error-content">
+            <strong id="error-title">Syntax Error:</strong>
+            <span id="error-details">Invalid diagram definition</span>
+          </div>
+        </div>
+
+        <!-- Editor Footer Metrics -->
+        <div class="editor-footer">
+          <span id="stat-lines">0 lines</span>
+          <span class="footer-divider">•</span>
+          <span id="stat-chars">0 characters</span>
+          <span class="footer-divider">•</span>
+          <span id="stat-type">Type: Auto-detecting</span>
+        </div>
+      </section>
+
+      <!-- Right Panel: Visual Diagram & AST Inspector Tabs -->
+      <section class="panel preview-panel" id="preview-section">
+        <div class="panel-header tabs-header">
+          <div class="tabs-nav" role="tablist">
+            <button id="tab-visual" class="tab-button active" role="tab" aria-selected="true" data-tab="view-visual">
+              <span class="tab-icon">📊</span>
+              <span>Visual Diagram</span>
+            </button>
+            <button id="tab-entities" class="tab-button" role="tab" aria-selected="false" data-tab="view-entities">
+              <span class="tab-icon">🧩</span>
+              <span>Parsed Graph</span>
+              <span id="badge-nodes-count" class="tab-badge">0 nodes</span>
+            </button>
+            <button id="tab-ast" class="tab-button" role="tab" aria-selected="false" data-tab="view-ast">
+              <span class="tab-icon">⚙️</span>
+              <span>AST JSON</span>
+              <span class="tab-badge pill-green">JSON</span>
+            </button>
+          </div>
+
+          <!-- Canvas Controls (Active in visual tab) -->
+          <div class="canvas-controls" id="canvas-toolbar">
+            <button id="btn-zoom-in" class="btn-canvas" title="Zoom In (+)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+            </button>
+            <button id="btn-zoom-out" class="btn-canvas" title="Zoom Out (-)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+            </button>
+            <button id="btn-zoom-reset" class="btn-canvas" title="Reset Zoom (100%)">
+              <span class="zoom-label" id="zoom-percentage">100%</span>
+            </button>
+            <button id="btn-fit" class="btn-canvas" title="Fit to Screen">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+            </button>
+            <div class="control-divider"></div>
+            <button id="btn-copy-svg" class="btn-canvas" title="Copy Raw SVG">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+            <button id="btn-download-svg" class="btn-canvas btn-download" title="Download SVG Vector">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              SVG
+            </button>
+            <button id="btn-download-png" class="btn-canvas btn-download" title="Download High-Res PNG">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              PNG
+            </button>
+            <button id="btn-fullscreen" class="btn-canvas" title="Toggle Fullscreen Canvas">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 1: Visual Diagram Canvas View -->
+        <div id="view-visual" class="tab-content active">
+          <div id="diagram-viewport" class="diagram-viewport">
+            <div id="diagram-container" class="diagram-container">
+              <!-- Rendered Mermaid SVG will be injected here -->
+            </div>
+            <div id="render-loading" class="render-loading hidden">
+              <div class="spinner"></div>
+              <span>Rendering Diagram...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Extracted Graph Entities Inspector -->
+        <div id="view-entities" class="tab-content">
+          <div class="entities-container">
+            <!-- Metrics Bar -->
+            <div class="metrics-row">
+              <div class="metric-card">
+                <span class="metric-label">Diagram Type</span>
+                <span id="metric-type" class="metric-value">Flowchart</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Total Nodes</span>
+                <span id="metric-nodes" class="metric-value">0</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Total Edges</span>
+                <span id="metric-edges" class="metric-value">0</span>
+              </div>
+              <div class="metric-card">
+                <span class="metric-label">Subgraphs</span>
+                <span id="metric-subgraphs" class="metric-value">0</span>
+              </div>
+            </div>
+
+            <!-- Entities Search & Filters -->
+            <div class="entities-search-bar">
+              <input type="text" id="entities-search" class="search-input" placeholder="Search extracted nodes, labels, or connections...">
+            </div>
+
+            <!-- Nodes & Connections Lists -->
+            <div class="entities-grid">
+              <div class="entity-column">
+                <h3 class="entity-column-title">Extracted Nodes & Shapes</h3>
+                <div id="nodes-list" class="entity-cards-list">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <div class="entity-column">
+                <h3 class="entity-column-title">Extracted Edges & Relationships</h3>
+                <div id="edges-list" class="entity-cards-list">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Structured AST JSON Viewer -->
+        <div id="view-ast" class="tab-content">
+          <div class="ast-container">
+            <div class="ast-toolbar">
+              <div class="ast-meta">
+                <span class="ast-meta-badge" id="ast-status-badge">Parser: Ready</span>
+                <span id="ast-parse-time" class="ast-meta-time">Parsed in 2ms</span>
+              </div>
+              <div class="ast-actions">
+                <button id="btn-copy-ast" class="btn btn-secondary btn-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  Copy JSON AST
+                </button>
+              </div>
+            </div>
+            <div class="ast-json-wrapper">
+              <pre id="ast-json-viewer" class="json-code"><code>{}</code></pre>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- App Bottom Footer -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span class="indicator-dot"></span>
+        <span>Node.js Backend & Client Parser Engine Active</span>
+        <span class="footer-divider">•</span>
+        <span id="render-benchmark">Ready</span>
+      </div>
+      <div class="footer-right">
+        <span>Mermaid.js v11</span>
+        <span class="footer-divider">•</span>
+        <span>Vanilla CSS & JavaScript</span>
+      </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <!-- Shared parser engine script -->
+  <script src="/src/parser.js"></script>
+  <!-- Mermaid core bundle loaded locally from node_modules with CDN fallback -->
+  <script src="/vendor/mermaid/mermaid.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js'"></script>
+  <!-- Main application script -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
