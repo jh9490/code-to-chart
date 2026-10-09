@@ -8,8 +8,10 @@
    ========================================================== */
 
 :root,
+body.theme-light,
+body.theme-whiteboard,
 body.theme-miro {
-  /* Miro Whiteboard Light Palette */
+  /* Whiteboard Studio Light Palette */
   --bg-darkest: #f4f5f7;
   --bg-app: #f8fafc;
   --bg-primary: #ffffff;
@@ -718,7 +720,8 @@ body.theme-dark .code-textarea::selection {
   transition: background-color 0.25s ease;
 }
 
-/* Miro Lite Whiteboard Grid */
+/* Whiteboard Grid Canvas */
+.diagram-viewport.bg-grid,
 .diagram-viewport.bg-miro-grid {
   background-color: #f8fafc;
   background-image: 
@@ -758,6 +761,7 @@ body.theme-dark .code-textarea::selection {
   height: auto;
 }
 
+.bg-grid .diagram-container svg,
 .bg-miro-grid .diagram-container svg {
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.06));
 }

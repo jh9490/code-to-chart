@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Apply Canvas Backdrop Style
   function applyCanvasBackdrop() {
-    const bgVal = canvasBgSelect ? canvasBgSelect.value : 'miro-grid';
-    diagramViewport.classList.remove('bg-miro-grid', 'bg-dark-grid', 'bg-plain-white');
+    const bgVal = canvasBgSelect ? canvasBgSelect.value : 'grid';
+    diagramViewport.classList.remove('bg-grid', 'bg-miro-grid', 'bg-dark-grid', 'bg-plain-white');
     diagramViewport.classList.add(`bg-${bgVal}`);
 
     const lookVal = lookSelect ? lookSelect.value : 'handDrawn';
@@ -576,14 +576,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (appThemeSelect) {
     appThemeSelect.addEventListener('change', () => {
       const mode = appThemeSelect.value;
-      document.body.classList.remove('theme-miro', 'theme-dark');
-      document.body.classList.add(`theme-${mode}`);
-
-      if (mode === 'miro') {
-        if (canvasBgSelect) canvasBgSelect.value = 'miro-grid';
+      if (mode === 'light' || mode === 'miro') {
+        document.body.classList.remove('theme-dark');
+        document.body.classList.add('theme-light');
+        if (canvasBgSelect) canvasBgSelect.value = 'grid';
         if (themeSelect) themeSelect.value = 'neutral';
         if (lookSelect) lookSelect.value = 'handDrawn';
       } else {
+        document.body.classList.remove('theme-light', 'theme-miro');
+        document.body.classList.add('theme-dark');
         if (canvasBgSelect) canvasBgSelect.value = 'dark-grid';
         if (themeSelect) themeSelect.value = 'dark';
       }
@@ -591,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
       applyCanvasBackdrop();
       initMermaid(themeSelect.value, lookSelect.value);
       processDiagram();
-      showToast(`App theme: ${mode === 'miro' ? '🟡 Miro Whiteboard' : '🌙 Dark Cosmic'}`);
+      showToast(`App theme: ${mode === 'dark' ? '🌙 Dark Cosmic' : '☀️ Whiteboard Studio'}`);
     });
   }
 
@@ -670,12 +671,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const ctx = canvas.getContext('2d');
 
       // Draw background
-      const isMiroGrid = canvasBgSelect && canvasBgSelect.value === 'miro-grid';
-      if (isMiroGrid) {
+      const isGrid = canvasBgSelect && (canvasBgSelect.value === 'grid' || canvasBgSelect.value === 'miro-grid');
+      if (isGrid) {
         ctx.fillStyle = '#f8fafc';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw Miro grid pattern on exported image
+        // Draw grid pattern on exported image
         ctx.strokeStyle = 'rgba(100, 116, 139, 0.12)';
         ctx.lineWidth = 1;
         const gridSize = 24 * scaleFactor;
@@ -729,8 +730,10 @@ document.addEventListener('DOMContentLoaded', () => {
           examplesMap[ex.id] = ex.code;
         });
 
-        // Set initial example to Miro Hand-Drawn Sketch
-        if (examplesMap['miro_sketch']) {
+        // Set initial example to Hand-Drawn Sketch
+        if (examplesMap['sketch_flow']) {
+          mermaidInput.value = examplesMap['sketch_flow'];
+        } else if (examplesMap['miro_sketch']) {
           mermaidInput.value = examplesMap['miro_sketch'];
         } else if (examplesMap['microservices']) {
           mermaidInput.value = examplesMap['microservices'];

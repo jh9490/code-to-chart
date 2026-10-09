@@ -4,10 +4,10 @@
 
 const EXAMPLES = [
   {
-    id: 'miro_sketch',
-    title: 'Miro Whiteboard Sketch Flow',
+    id: 'sketch_flow',
+    title: 'Hand-Drawn Flow (Sketch)',
     category: 'flowchart',
-    description: 'Hand-drawn flowchart with decision diamonds, process circles, and output rectangle matching Miro board',
+    description: 'Hand-drawn whiteboard flowchart with decision diamonds, process circles, and execution block',
     code: `flowchart LR
     D1{Decision 1} --> D2{Decision 2}
     D2 --> C1((Process A))
