@@ -41,6 +41,7 @@
           <select id="template-select" class="custom-select" title="Choose template">
             <option value="" disabled>Select diagram template...</option>
             <option value="sketch_flow" selected>✏️ Hand-Drawn Flow (Sketch)</option>
+            <option value="terraform_architecture">☁️ Terraform AWS Architecture</option>
             <option value="microservices">Cloud Microservices Architecture</option>
             <option value="oauth2_sequence">OAuth 2.0 Auth Flow (Sequence)</option>
             <option value="ecommerce_erd">E-Commerce Schema (ERD)</option>
@@ -104,6 +105,9 @@
           </div>
 
           <div class="editor-header-actions">
+            <button id="btn-open-tf-modal" class="btn btn-secondary btn-sm" title="Import Terraform / HCL code to Architecture diagram">
+              ☁️ Import Terraform
+            </button>
             <button id="btn-beautify" class="btn-icon" title="Format indentation">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
             </button>
@@ -306,8 +310,42 @@
     <div id="toast-container" class="toast-container"></div>
   </div>
 
-  <!-- Shared parser engine script -->
+  <!-- Terraform Import Modal -->
+  <div id="tf-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <span class="modal-icon">☁️</span>
+          <div>
+            <h3 class="modal-title">Terraform to Architecture Diagram</h3>
+            <p class="modal-subtitle">Paste raw .tf / HCL code to generate an interactive cloud architecture chart</p>
+          </div>
+        </div>
+        <button id="btn-close-tf-modal" class="btn-icon" title="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-toolbar">
+          <span class="modal-label">Quick Template:</span>
+          <button class="snippet-btn tf-template-btn" data-template="aws_3tier">AWS 3-Tier Web App</button>
+          <button class="snippet-btn tf-template-btn" data-template="serverless">Serverless (API GW + Lambda + DynamoDB)</button>
+          <button class="snippet-btn tf-template-btn" data-template="azure_vm">Azure VNet & VM</button>
+        </div>
+        <textarea id="tf-input" class="tf-textarea" placeholder="Paste your main.tf or Terraform code here...&#10;&#10;resource &quot;aws_vpc&quot; &quot;main&quot; {&#10;  cidr_block = &quot;10.0.0.0/16&quot;&#10;}&#10;..."></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-tf-cancel" class="btn btn-secondary">Cancel</button>
+        <button id="btn-tf-convert" class="btn btn-primary">
+          ✨ Generate Architecture Diagram
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared parser engine scripts -->
   <script src="/src/parser.js"></script>
+  <script src="/src/terraform-parser.js"></script>
   <!-- Mermaid core bundle loaded locally from node_modules with CDN fallback -->
   <script src="/vendor/mermaid/mermaid.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js'"></script>
   <!-- Main application script -->

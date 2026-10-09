@@ -759,6 +759,155 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ==========================================================
+  // TERRAFORM IMPORTER CONTROLLER
+  // ==========================================================
+  const btnOpenTfModal = document.getElementById('btn-open-tf-modal');
+  const tfModal = document.getElementById('tf-modal');
+  const btnCloseTfModal = document.getElementById('btn-close-tf-modal');
+  const btnTfCancel = document.getElementById('btn-tf-cancel');
+  const btnTfConvert = document.getElementById('btn-tf-convert');
+  const tfInput = document.getElementById('tf-input');
+  const tfTemplateBtns = document.querySelectorAll('.tf-template-btn');
+
+  const TF_TEMPLATES = {
+    aws_3tier: `resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_subnet" "public_1" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+}
+
+resource "aws_subnet" "private_1" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.10.0/24"
+}
+
+resource "aws_security_group" "web_sg" {
+  name   = "web-security-group"
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_lb" "alb" {
+  name               = "app-load-balancer"
+  load_balancer_type = "application"
+  subnets            = [aws_subnet.public_1.id]
+}
+
+resource "aws_instance" "web_server" {
+  instance_type          = "t3.medium"
+  subnet_id              = aws_subnet.private_1.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+}
+
+resource "aws_db_instance" "postgres" {
+  engine         = "postgres"
+  instance_class = "db.t3.micro"
+}
+
+resource "aws_s3_bucket" "static_assets" {
+  bucket = "company-app-static-assets"
+}`,
+    serverless: `resource "aws_apigatewayv2_api" "http_api" {
+  name          = "serverless-gateway"
+  protocol_type = "HTTP"
+}
+
+resource "aws_lambda_function" "auth_fn" {
+  function_name = "auth-handler"
+  runtime       = "nodejs20.x"
+}
+
+resource "aws_lambda_function" "order_fn" {
+  function_name = "order-processor"
+  runtime       = "python3.11"
+}
+
+resource "aws_dynamodb_table" "orders" {
+  name         = "orders-table"
+  billing_mode = "PAY_PER_REQUEST"
+}`,
+    azure_vm: `resource "azurerm_virtual_network" "vnet" {
+  name          = "production-vnet"
+  address_space = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet" "app_subnet" {
+  name                 = "app-subnet"
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.2.0/24"]
+}
+
+resource "azurerm_network_security_group" "nsg" {
+  name = "app-nsg"
+}
+
+resource "azurerm_linux_virtual_machine" "app_vm" {
+  name = "app-vm-01"
+  size = "Standard_B2s"
+}
+
+resource "azurerm_cosmosdb_account" "db" {
+  name = "cosmos-db-account"
+}`
+  };
+
+  if (btnOpenTfModal && tfModal) {
+    btnOpenTfModal.addEventListener('click', () => {
+      tfModal.classList.remove('hidden');
+      if (!tfInput.value.trim()) {
+        tfInput.value = TF_TEMPLATES.aws_3tier;
+      }
+      tfInput.focus();
+    });
+
+    const closeTfModal = () => tfModal.classList.add('hidden');
+    if (btnCloseTfModal) btnCloseTfModal.addEventListener('click', closeTfModal);
+    if (btnTfCancel) btnTfCancel.addEventListener('click', closeTfModal);
+
+    tfTemplateBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-template');
+        if (TF_TEMPLATES[key]) {
+          tfInput.value = TF_TEMPLATES[key];
+          showToast(`Loaded ${btn.textContent} template`);
+        }
+      });
+    });
+
+    if (btnTfConvert) {
+      btnTfConvert.addEventListener('click', () => {
+        const code = tfInput.value.trim();
+        if (!code) {
+          showToast('Please paste Terraform HCL code first', 'error');
+          return;
+        }
+
+        try {
+          if (window.TerraformParser) {
+            const parsedModel = window.TerraformParser.parseHCL(code);
+            const mermaidCode = window.TerraformParser.toMermaid(code);
+
+            mermaidInput.value = mermaidCode;
+            closeTfModal();
+            resetZoom();
+            scheduleProcess();
+
+            const count = parsedModel.resources ? parsedModel.resources.length : 0;
+            showToast(`Generated architecture from ${count} Terraform resources!`, 'success');
+          } else {
+            showToast('Terraform parser module not ready', 'error');
+          }
+        } catch (err) {
+          console.error('Terraform parsing failed:', err);
+          showToast('Failed to convert Terraform: ' + err.message, 'error');
+        }
+      });
+    }
+  }
+
   // Initialize App
   loadPresetExamples();
 });

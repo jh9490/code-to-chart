@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const MermaidParser = require('./src/parser');
+const TerraformParser = require('./src/terraform-parser');
 const EXAMPLES = require('./src/examples');
 
 const app = express();
@@ -13,9 +14,12 @@ app.use(express.urlencoded({ extended: true }));
 // Serve Mermaid library locally from node_modules
 app.use('/vendor/mermaid', express.static(path.join(__dirname, 'node_modules/mermaid/dist')));
 
-// Serve shared parser module to client
+// Serve shared parser modules to client
 app.use('/src/parser.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'src/parser.js'));
+});
+app.use('/src/terraform-parser.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/terraform-parser.js'));
 });
 
 // Serve static frontend files
@@ -57,6 +61,36 @@ app.post('/api/parse', (req, res) => {
     return res.status(500).json({
       success: false,
       error: error.message || 'Internal parsing error'
+    });
+  }
+});
+
+// Convert Terraform (HCL) into Mermaid Flowchart
+app.post('/api/terraform/parse', (req, res) => {
+  try {
+    const { hcl } = req.body;
+
+    if (!hcl || typeof hcl !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Field "hcl" is required and must be a string containing Terraform code'
+      });
+    }
+
+    const model = TerraformParser.parseHCL(hcl);
+    const mermaid = TerraformParser.toMermaid(hcl);
+
+    return res.json({
+      success: true,
+      mermaid,
+      model,
+      stats: model.stats
+    });
+  } catch (error) {
+    console.error('Terraform parsing error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to parse Terraform code'
     });
   }
 });

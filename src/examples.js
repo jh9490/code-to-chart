@@ -16,6 +16,34 @@ const EXAMPLES = [
     R -->|Loopback| D1`
   },
   {
+    id: 'terraform_architecture',
+    title: 'Terraform AWS Cloud (VPC, EC2, RDS, S3)',
+    category: 'flowchart',
+    description: 'Production AWS infrastructure with VPC, Public/Private Subnets, ALB, EC2, Aurora RDS, and S3 Bucket',
+    code: `flowchart TD
+    subgraph sub_aws_vpc_main ["VPC: main (10.0.0.0/16)"]
+        subgraph sub_aws_subnet_public_1 ["Subnet: public_1 (10.0.1.0/24)"]
+            aws_lb_app_alb[["Load Balancer: app_alb (application)"]]
+        end
+        subgraph sub_aws_subnet_private_1 ["Subnet: private_1 (10.0.10.0/24)"]
+            aws_instance_app_server["EC2: app_server (t3.medium)"]
+        end
+        subgraph sub_aws_subnet_db_1 ["Subnet: db_1 (10.0.20.0/24)"]
+            aws_db_instance_aurora[("Aurora DB: aurora (aurora-postgresql)")]
+        end
+        aws_security_group_alb_sg{{"Security Group: alb_sg"}}
+        aws_security_group_app_sg{{"Security Group: app_sg"}}
+    end
+    aws_s3_bucket_static_assets[("S3 Bucket: static_assets")]
+
+    %% Infrastructure Connections
+    aws_lb_app_alb -->|Routes Traffic| aws_instance_app_server
+    aws_lb_app_alb -->|Secured by| aws_security_group_alb_sg
+    aws_instance_app_server -->|Secured by| aws_security_group_app_sg
+    aws_instance_app_server -->|Queries DB| aws_db_instance_aurora
+    aws_instance_app_server -->|Reads/Writes| aws_s3_bucket_static_assets`
+  },
+  {
     id: 'microservices',
     title: 'Cloud Microservices Architecture',
     category: 'flowchart',
