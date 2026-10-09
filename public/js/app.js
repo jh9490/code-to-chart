@@ -102,15 +102,22 @@ resource "azurerm_cosmosdb_account" "db" {
   const errorBanner = document.getElementById('error-banner');
   const errorDetails = document.getElementById('error-details');
 
+  // Layout & Resizer Elements
+  const studioContainer = document.getElementById('studio-container');
+  const splitResizer = document.getElementById('split-resizer');
+  const btnToggleExpand = document.getElementById('btn-toggle-expand');
+
   // Editor Mode Elements
   const editorSection = document.getElementById('editor-section');
   const btnModeMermaid = document.getElementById('btn-mode-mermaid');
   const btnModeTerraform = document.getElementById('btn-mode-terraform');
-  const snippetsMermaid = document.getElementById('snippets-mermaid');
-  const snippetsTerraform = document.getElementById('snippets-terraform');
-  const btnTfPresets = document.getElementById('btn-tf-presets');
   const mmdOnlyControls = document.querySelectorAll('.mmd-only-control');
   const tfOnlyControls = document.querySelectorAll('.tf-only-control');
+
+  // Chart Bottom Action Bar Elements
+  const chartBottomBar = document.getElementById('chart-bottom-bar');
+  const chartBarTf = document.getElementById('chart-bar-tf');
+  const chartBarMmd = document.getElementById('chart-bar-mmd');
 
   // Stats Elements
   const statLines = document.getElementById('stat-lines');
@@ -274,9 +281,9 @@ resource "azurerm_cosmosdb_account" "db" {
       editorSection.classList.add(`mode-${lang}`);
     }
 
-    // 3. Switch Quick Snippets Toolbars
-    if (snippetsMermaid) snippetsMermaid.classList.toggle('hidden', lang !== 'mermaid');
-    if (snippetsTerraform) snippetsTerraform.classList.toggle('hidden', lang !== 'terraform');
+    // 3. Switch Bottom Chart Action Bar
+    if (chartBarTf) chartBarTf.classList.toggle('hidden', lang !== 'terraform');
+    if (chartBarMmd) chartBarMmd.classList.toggle('hidden', lang !== 'mermaid');
 
     // 4. Toggle Mode-Specific Actions
     mmdOnlyControls.forEach(el => el.classList.toggle('hidden', lang !== 'mermaid'));
@@ -323,14 +330,65 @@ resource "azurerm_cosmosdb_account" "db" {
     });
   }
 
-  if (btnTfPresets) {
-    btnTfPresets.addEventListener('click', () => {
-      if (tfModal) {
-        tfModal.classList.remove('hidden');
-        if (!tfInput.value.trim()) {
-          tfInput.value = mermaidInput.value || TF_TEMPLATES.aws_3tier;
-        }
+  // ==========================================================
+  // HORIZONTAL RESIZER & EXPANDABLE EDITOR
+  // ==========================================================
+  let isResizing = false;
+  let startX = 0;
+  let startWidth = 460;
+
+  if (splitResizer && editorSection && studioContainer) {
+    splitResizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      startX = e.clientX;
+      startWidth = editorSection.getBoundingClientRect().width;
+      splitResizer.classList.add('is-dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const dx = e.clientX - startX;
+      const containerRect = studioContainer.getBoundingClientRect();
+      const minWidth = 280;
+      const maxWidth = containerRect.width - 320;
+      const newWidth = Math.max(minWidth, Math.min(startWidth + dx, maxWidth));
+      
+      editorSection.classList.remove('is-expanded');
+      editorSection.style.width = `${newWidth}px`;
+      fitToScreen();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        splitResizer.classList.remove('is-dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        fitToScreen();
       }
+    });
+  }
+
+  // Expand / Restore Toggle Button
+  if (btnToggleExpand && editorSection) {
+    btnToggleExpand.addEventListener('click', () => {
+      editorSection.classList.add('is-animating');
+      const isCurrentlyExpanded = editorSection.classList.toggle('is-expanded');
+      
+      if (!isCurrentlyExpanded) {
+        editorSection.style.width = '460px';
+      } else {
+        editorSection.style.width = '';
+      }
+      
+      setTimeout(() => {
+        editorSection.classList.remove('is-animating');
+        fitToScreen();
+      }, 260);
+
+      showToast(isCurrentlyExpanded ? 'Editor expanded horizontally' : 'Editor width restored');
     });
   }
 
@@ -774,10 +832,11 @@ resource "azurerm_cosmosdb_account" "db" {
     });
   });
 
-  // Quick Insert Snippets
-  document.querySelectorAll('.snippet-btn').forEach(btn => {
+  // Quick Insert Snippets & Cloud Resources
+  document.querySelectorAll('.snippet-btn, .tf-snippet-btn, .tf-res-btn, .mmd-shape-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const snippet = btn.getAttribute('data-insert');
+      if (!snippet) return;
       const pos = mermaidInput.selectionStart || mermaidInput.value.length;
       const text = mermaidInput.value;
       const before = text.slice(0, pos);
@@ -1145,8 +1204,15 @@ resource "azurerm_cosmosdb_account" "db" {
       btn.addEventListener('click', () => {
         const key = btn.getAttribute('data-template');
         if (TF_TEMPLATES[key]) {
-          tfInput.value = TF_TEMPLATES[key];
-          showToast(`Loaded ${btn.textContent} template`);
+          if (currentLanguage !== 'terraform') {
+            switchLanguage('terraform', false);
+          }
+          mermaidInput.value = TF_TEMPLATES[key];
+          codeBuffers.terraform = TF_TEMPLATES[key];
+          if (tfInput) tfInput.value = TF_TEMPLATES[key];
+          resetZoom();
+          scheduleProcess();
+          showToast(`Loaded ${btn.textContent.trim()} template`, 'success');
         }
       });
     });

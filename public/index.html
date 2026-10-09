@@ -32,10 +32,6 @@
           <h1 class="brand-title">CodeToChart <span class="badge-studio">v2.0</span></h1>
           <span class="brand-subtitle">Code & Cloud Infrastructure to Visual Charts</span>
         </div>
-        <div class="brand-engines-pills">
-          <span class="engine-pill engine-mermaid">🧜 Mermaid</span>
-          <span class="engine-pill engine-terraform">☁️ Terraform</span>
-        </div>
       </div>
 
       <div class="header-controls">
@@ -108,7 +104,7 @@
     </header>
 
     <!-- Main Studio Split View -->
-    <main class="studio-container">
+    <main class="studio-container" id="studio-container">
       
       <!-- Left Panel: Editor & Code Tools -->
       <section class="panel editor-panel mode-mermaid" id="editor-section">
@@ -134,9 +130,9 @@
           </div>
 
           <div class="editor-header-actions">
-            <!-- Cloud Templates Dropdown Button (Visible in Terraform mode) -->
-            <button id="btn-tf-presets" class="btn btn-secondary btn-sm tf-only-control hidden" title="Select Cloud Architecture Template">
-              ☁️ Cloud Templates
+            <!-- Expand / Restore Editor Width Toggle -->
+            <button id="btn-toggle-expand" class="btn-icon" title="Expand / Restore editor width horizontally">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
             </button>
             <!-- Import Terraform Modal Button (Visible in Mermaid mode) -->
             <button id="btn-open-tf-modal" class="btn btn-secondary btn-sm mmd-only-control" title="Import Terraform / HCL code into Mermaid">
@@ -151,32 +147,6 @@
             <button id="btn-copy-code" class="btn-icon" title="Copy code">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-          </div>
-        </div>
-
-        <!-- Quick Insert Snippets Toolbar: Dynamically displayed based on active mode -->
-        <div class="snippets-toolbar" id="snippets-toolbar">
-          <!-- Mermaid Snippets -->
-          <div class="snippets-group" id="snippets-mermaid">
-            <span class="snippets-label">Mermaid:</span>
-            <button class="snippet-btn" data-insert="A[Box Node] --> B[Target Node]">Node + Edge</button>
-            <button class="snippet-btn" data-insert="Decision{Is Valid?} -->|Yes| OK[Success]&#10;Decision -->|No| Fail[Error]">Decision</button>
-            <button class="snippet-btn" data-insert="DB[(Database Cluster)]">Database</button>
-            <button class="snippet-btn" data-insert="subgraph GroupName [&quot;Group Title&quot;]&#10;    ItemA&#10;    ItemB&#10;end">Subgraph</button>
-            <button class="snippet-btn" data-insert="Alice->>Bob: Sync Request&#10;Bob-->>Alice: Async Response">Sequence</button>
-            <button class="snippet-btn" data-insert="class Order {&#10;    +String id&#10;    +process()&#10;}">Class</button>
-          </div>
-
-          <!-- Terraform Cloud Resource Snippets -->
-          <div class="snippets-group hidden" id="snippets-terraform">
-            <span class="snippets-label tf-label">HCL Resources:</span>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_vpc&quot; &quot;main&quot; {&#10;  cidr_block = &quot;10.0.0.0/16&quot;&#10;}">+ VPC</button>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_subnet&quot; &quot;public_1&quot; {&#10;  vpc_id     = aws_vpc.main.id&#10;  cidr_block = &quot;10.0.1.0/24&quot;&#10;}">+ Subnet</button>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_instance&quot; &quot;app_server&quot; {&#10;  instance_type = &quot;t3.medium&quot;&#10;  subnet_id     = aws_subnet.public_1.id&#10;}">+ EC2</button>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_db_instance&quot; &quot;postgres&quot; {&#10;  engine         = &quot;postgres&quot;&#10;  instance_class = &quot;db.t3.micro&quot;&#10;}">+ RDS</button>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_s3_bucket&quot; &quot;assets&quot; {&#10;  bucket = &quot;cloud-app-assets&quot;&#10;}">+ S3</button>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_security_group&quot; &quot;web_sg&quot; {&#10;  name   = &quot;web-security-group&quot;&#10;  vpc_id = aws_vpc.main.id&#10;}">+ SecGroup</button>
-            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_lb&quot; &quot;alb&quot; {&#10;  name               = &quot;app-load-balancer&quot;&#10;  load_balancer_type = &quot;application&quot;&#10;}">+ ALB</button>
           </div>
         </div>
 
@@ -204,6 +174,9 @@
           <span id="stat-type">Type: Auto-detecting</span>
         </div>
       </section>
+
+      <!-- Horizontal Drag Resizer Divider -->
+      <div class="split-resizer" id="split-resizer" title="Drag horizontally to resize editor"></div>
 
       <!-- Right Panel: Visual Diagram & AST Inspector Tabs -->
       <section class="panel preview-panel" id="preview-section">
@@ -266,6 +239,45 @@
             <div id="render-loading" class="render-loading hidden">
               <div class="spinner"></div>
               <span>Rendering Diagram...</span>
+            </div>
+          </div>
+
+          <!-- Bottom Action Bar in Chart Section (Cloud Templates & Cloud Resources) -->
+          <div class="chart-bottom-bar" id="chart-bottom-bar">
+            <!-- Terraform Mode Bar -->
+            <div class="chart-bar-group chart-bar-tf" id="chart-bar-tf">
+              <div class="chart-bar-section">
+                <span class="chart-bar-label">☁️ Templates:</span>
+                <button class="chart-pill-btn tf-template-btn" data-template="aws_3tier" title="Load AWS 3-Tier Production Architecture">AWS 3-Tier</button>
+                <button class="chart-pill-btn tf-template-btn" data-template="serverless" title="Load Serverless Microservices">Serverless API</button>
+                <button class="chart-pill-btn tf-template-btn" data-template="azure_vm" title="Load Azure Cloud Network">Azure VNet</button>
+              </div>
+
+              <div class="chart-bar-divider"></div>
+
+              <div class="chart-bar-section chart-bar-scrollable">
+                <span class="chart-bar-label">☁️ Cloud Resources:</span>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_vpc&quot; &quot;main&quot; {&#10;  cidr_block = &quot;10.0.0.0/16&quot;&#10;}" title="Insert AWS VPC">+ VPC</button>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_subnet&quot; &quot;public_1&quot; {&#10;  vpc_id     = aws_vpc.main.id&#10;  cidr_block = &quot;10.0.1.0/24&quot;&#10;}" title="Insert AWS Subnet">+ Subnet</button>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_instance&quot; &quot;app_server&quot; {&#10;  instance_type = &quot;t3.medium&quot;&#10;  subnet_id     = aws_subnet.public_1.id&#10;}" title="Insert EC2 Instance">+ EC2</button>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_db_instance&quot; &quot;postgres&quot; {&#10;  engine         = &quot;postgres&quot;&#10;  instance_class = &quot;db.t3.micro&quot;&#10;}" title="Insert RDS Database">+ RDS</button>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_s3_bucket&quot; &quot;assets&quot; {&#10;  bucket = &quot;cloud-app-assets&quot;&#10;}" title="Insert S3 Bucket">+ S3</button>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_security_group&quot; &quot;web_sg&quot; {&#10;  name   = &quot;web-security-group&quot;&#10;  vpc_id = aws_vpc.main.id&#10;}" title="Insert Security Group">+ SecGroup</button>
+                <button class="chart-pill-btn tf-snippet-btn" data-insert="resource &quot;aws_lb&quot; &quot;alb&quot; {&#10;  name               = &quot;app-load-balancer&quot;&#10;  load_balancer_type = &quot;application&quot;&#10;}" title="Insert Application Load Balancer">+ ALB</button>
+              </div>
+            </div>
+
+            <!-- Mermaid Mode Bar -->
+            <div class="chart-bar-group chart-bar-mmd hidden" id="chart-bar-mmd">
+              <div class="chart-bar-section chart-bar-scrollable">
+                <span class="chart-bar-label">🧜 Quick Insert:</span>
+                <button class="chart-pill-btn snippet-btn" data-insert="A[Box Node] --> B[Target Node]">Node + Edge</button>
+                <button class="chart-pill-btn snippet-btn" data-insert="Decision{Is Valid?} -->|Yes| OK[Success]&#10;Decision -->|No| Fail[Error]">Decision</button>
+                <button class="chart-pill-btn snippet-btn" data-insert="DB[(Database Cluster)]">Database</button>
+                <button class="chart-pill-btn snippet-btn" data-insert="subgraph GroupName [&quot;Group Title&quot;]&#10;    ItemA&#10;    ItemB&#10;end">Subgraph</button>
+                <button class="chart-pill-btn snippet-btn" data-insert="Alice->>Bob: Sync Request&#10;Bob-->>Alice: Async Response">Sequence</button>
+                <button class="chart-pill-btn snippet-btn" data-insert="class Order {&#10;    +String id&#10;    +process()&#10;}">Class</button>
+              </div>
             </div>
           </div>
         </div>
