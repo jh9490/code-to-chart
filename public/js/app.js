@@ -1,9 +1,94 @@
 /**
- * Mermaid Parser & Visual Studio - Client Controller
- * Pure Vanilla JavaScript (No frameworks)
+ * CodeToChart - Dual Engine Studio (Mermaid & Terraform HCL)
+ * Pure Vanilla JavaScript (No external frameworks)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Cloud Templates for Terraform
+  const TF_TEMPLATES = {
+    aws_3tier: `resource "aws_vpc" "main" {
+  cidr_block = "10.0.0.0/16"
+}
+
+resource "aws_subnet" "public_1" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+}
+
+resource "aws_subnet" "private_1" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.10.0/24"
+}
+
+resource "aws_security_group" "web_sg" {
+  name   = "web-security-group"
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_lb" "alb" {
+  name               = "app-load-balancer"
+  load_balancer_type = "application"
+  subnets            = [aws_subnet.public_1.id]
+}
+
+resource "aws_instance" "web_server" {
+  instance_type          = "t3.medium"
+  subnet_id              = aws_subnet.private_1.id
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+}
+
+resource "aws_db_instance" "postgres" {
+  engine         = "postgres"
+  instance_class = "db.t3.micro"
+}
+
+resource "aws_s3_bucket" "static_assets" {
+  bucket = "company-app-static-assets"
+}`,
+    serverless: `resource "aws_apigatewayv2_api" "http_api" {
+  name          = "serverless-gateway"
+  protocol_type = "HTTP"
+}
+
+resource "aws_lambda_function" "auth_fn" {
+  function_name = "auth-handler"
+  runtime       = "nodejs20.x"
+}
+
+resource "aws_lambda_function" "order_fn" {
+  function_name = "order-processor"
+  runtime       = "python3.11"
+}
+
+resource "aws_dynamodb_table" "orders" {
+  name         = "orders-table"
+  billing_mode = "PAY_PER_REQUEST"
+}`,
+    azure_vm: `resource "azurerm_virtual_network" "vnet" {
+  name          = "production-vnet"
+  address_space = ["10.0.0.0/16"]
+}
+
+resource "azurerm_subnet" "app_subnet" {
+  name                 = "app-subnet"
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.2.0/24"]
+}
+
+resource "azurerm_network_security_group" "nsg" {
+  name = "app-nsg"
+}
+
+resource "azurerm_linux_virtual_machine" "app_vm" {
+  name = "app-vm-01"
+  size = "Standard_B2s"
+}
+
+resource "azurerm_cosmosdb_account" "db" {
+  name = "cosmos-db-account"
+}`
+  };
+
   // DOM Elements
   const appThemeSelect = document.getElementById('app-theme-select');
   const mermaidInput = document.getElementById('mermaid-input');
@@ -16,6 +101,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const statusText = document.getElementById('status-text');
   const errorBanner = document.getElementById('error-banner');
   const errorDetails = document.getElementById('error-details');
+
+  // Editor Mode Elements
+  const editorSection = document.getElementById('editor-section');
+  const btnModeMermaid = document.getElementById('btn-mode-mermaid');
+  const btnModeTerraform = document.getElementById('btn-mode-terraform');
+  const snippetsMermaid = document.getElementById('snippets-mermaid');
+  const snippetsTerraform = document.getElementById('snippets-terraform');
+  const btnTfPresets = document.getElementById('btn-tf-presets');
+  const mmdOnlyControls = document.querySelectorAll('.mmd-only-control');
+  const tfOnlyControls = document.querySelectorAll('.tf-only-control');
 
   // Stats Elements
   const statLines = document.getElementById('stat-lines');
@@ -61,8 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnCopyAst = document.getElementById('btn-copy-ast');
   const toastContainer = document.getElementById('toast-container');
 
-  // App State
+  // App State & Multi-Language Buffers
+  let currentLanguage = 'mermaid'; // 'mermaid' | 'terraform'
+  const codeBuffers = {
+    mermaid: '',
+    terraform: TF_TEMPLATES.aws_3tier
+  };
   let currentAstData = null;
+  let currentTfModel = null;
   let examplesMap = {};
   let currentScale = 1;
   let translateX = 0;
@@ -153,6 +254,85 @@ document.addEventListener('DOMContentLoaded', () => {
   mermaidInput.addEventListener('scroll', () => {
     lineNumbers.scrollTop = mermaidInput.scrollTop;
   });
+
+  // ==========================================================
+  // DYNAMIC LANGUAGE SWITCHER (MERMAID vs TERRAFORM HCL)
+  // ==========================================================
+  function switchLanguage(lang, preserveCurrent = true) {
+    if (preserveCurrent && currentLanguage) {
+      codeBuffers[currentLanguage] = mermaidInput.value;
+    }
+    currentLanguage = lang;
+
+    // 1. Toggle Active Buttons
+    if (btnModeMermaid) btnModeMermaid.classList.toggle('active', lang === 'mermaid');
+    if (btnModeTerraform) btnModeTerraform.classList.toggle('active', lang === 'terraform');
+
+    // 2. Transform Editor Section Styles
+    if (editorSection) {
+      editorSection.classList.remove('mode-mermaid', 'mode-terraform');
+      editorSection.classList.add(`mode-${lang}`);
+    }
+
+    // 3. Switch Quick Snippets Toolbars
+    if (snippetsMermaid) snippetsMermaid.classList.toggle('hidden', lang !== 'mermaid');
+    if (snippetsTerraform) snippetsTerraform.classList.toggle('hidden', lang !== 'terraform');
+
+    // 4. Toggle Mode-Specific Actions
+    mmdOnlyControls.forEach(el => el.classList.toggle('hidden', lang !== 'mermaid'));
+    tfOnlyControls.forEach(el => el.classList.toggle('hidden', lang !== 'terraform'));
+
+    // 5. Update Status & Placeholder
+    if (lang === 'terraform') {
+      mermaidInput.placeholder = 'Write or paste Terraform / HCL code here...\n\nresource "aws_vpc" "main" {\n  cidr_block = "10.0.0.0/16"\n}\nresource "aws_subnet" "public" {\n  vpc_id     = aws_vpc.main.id\n  cidr_block = "10.0.1.0/24"\n}';
+      statType.textContent = 'Mode: Terraform HCL (.tf)';
+      syntaxBadge.className = 'status-badge status-valid';
+      statusText.textContent = 'Terraform HCL Active';
+    } else {
+      mermaidInput.placeholder = 'Write or paste Mermaid diagram code here (flowchart, sequenceDiagram, erDiagram...)...';
+      statType.textContent = 'Mode: Mermaid (.mmd)';
+      syntaxBadge.className = 'status-badge status-valid';
+      statusText.textContent = 'Mermaid AST Ready';
+    }
+
+    // 6. Load Buffer & Recompile
+    if (!codeBuffers[lang] && lang === 'terraform') {
+      codeBuffers[lang] = TF_TEMPLATES.aws_3tier;
+    }
+    mermaidInput.value = codeBuffers[lang] || '';
+    updateEditorStats();
+    resetZoom();
+    processDiagram();
+  }
+
+  if (btnModeMermaid) {
+    btnModeMermaid.addEventListener('click', () => {
+      if (currentLanguage !== 'mermaid') {
+        switchLanguage('mermaid');
+        showToast('Switched to 🧜 Mermaid Diagram Editor', 'info');
+      }
+    });
+  }
+
+  if (btnModeTerraform) {
+    btnModeTerraform.addEventListener('click', () => {
+      if (currentLanguage !== 'terraform') {
+        switchLanguage('terraform');
+        showToast('Switched to ☁️ Terraform (HCL) Editor', 'info');
+      }
+    });
+  }
+
+  if (btnTfPresets) {
+    btnTfPresets.addEventListener('click', () => {
+      if (tfModal) {
+        tfModal.classList.remove('hidden');
+        if (!tfInput.value.trim()) {
+          tfInput.value = mermaidInput.value || TF_TEMPLATES.aws_3tier;
+        }
+      }
+    });
+  }
 
   // Transform / Pan & Zoom Viewport
   function updateViewportTransform() {
@@ -252,13 +432,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Parse & Render Pipeline
+  // ==========================================================
+  // UNIFIED PARSE & RENDER PIPELINE (MERMAID + TERRAFORM)
+  // ==========================================================
   async function processDiagram() {
     const code = mermaidInput.value.trim();
     if (!code) {
-      diagramContainer.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 40px;">No diagram code provided. Type code or pick a preset above.</div>';
+      diagramContainer.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 40px;">No ${currentLanguage === 'terraform' ? 'Terraform HCL' : 'diagram'} code provided. Type code or click a snippet above.</div>`;
       syntaxBadge.className = 'status-badge status-valid';
-      statusText.textContent = 'Ready';
+      statusText.textContent = currentLanguage === 'terraform' ? 'HCL Editor Ready' : 'Ready';
       errorBanner.classList.add('hidden');
       return;
     }
@@ -266,7 +448,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const startTime = performance.now();
     renderLoading.classList.remove('hidden');
 
-    // 1. Run Parser Module (AST Extraction)
+    // Branch 1: TERRAFORM HCL ENGINE
+    if (currentLanguage === 'terraform') {
+      try {
+        if (!window.TerraformParser) {
+          throw new Error('Terraform Parser module not loaded');
+        }
+
+        // 1. Parse HCL model
+        const tfModel = window.TerraformParser.parseHCL(code);
+        currentTfModel = tfModel;
+
+        // 2. Generate deterministic Mermaid flowchart
+        const generatedMermaid = window.TerraformParser.toMermaid(code);
+
+        // 3. Update Entities tab with Cloud Resources
+        updateTerraformEntitiesView(tfModel);
+
+        // 4. Update AST tab with Structured Terraform Model
+        updateTerraformAstView(tfModel, generatedMermaid);
+
+        // 5. Compile Diagram SVG
+        if (window.mermaid) {
+          await window.mermaid.parse(generatedMermaid);
+          renderCounter++;
+          const renderId = `tf-render-${renderCounter}`;
+          const { svg } = await window.mermaid.render(renderId, generatedMermaid);
+
+          diagramContainer.innerHTML = svg;
+          syntaxBadge.className = 'status-badge status-valid';
+          const rCount = tfModel.resources ? tfModel.resources.length : 0;
+          statusText.textContent = `${rCount} Cloud Resource${rCount !== 1 ? 's' : ''}`;
+          errorBanner.classList.add('hidden');
+
+          const elapsed = (performance.now() - startTime).toFixed(1);
+          renderBenchmark.textContent = `Compiled in ${elapsed}ms (HCL → Chart)`;
+          astParseTime.textContent = `Parsed in ${elapsed}ms`;
+        }
+      } catch (err) {
+        console.error('Terraform parsing/rendering error:', err);
+        syntaxBadge.className = 'status-badge status-error';
+        statusText.textContent = 'HCL Error';
+        errorBanner.classList.remove('hidden');
+        errorDetails.textContent = err.message || 'Invalid Terraform HCL syntax';
+        renderBenchmark.textContent = 'Compilation Failed';
+      } finally {
+        renderLoading.classList.add('hidden');
+      }
+      return;
+    }
+
+    // Branch 2: MERMAID DIAGRAM ENGINE
     try {
       const astResult = window.MermaidParser ? window.MermaidParser.parse(code) : null;
       if (astResult) {
@@ -276,16 +508,12 @@ document.addEventListener('DOMContentLoaded', () => {
         statType.textContent = `Type: ${astResult.type.toUpperCase()}`;
       }
     } catch (parseErr) {
-      console.warn('AST Parse warning:', parseErr);
+      console.warn('Mermaid AST Parse warning:', parseErr);
     }
 
-    // 2. Validate & Render Diagram SVG
     try {
       if (window.mermaid) {
-        // Validate syntax
         await window.mermaid.parse(code);
-
-        // Render diagram
         renderCounter++;
         const renderId = `mermaid-render-${renderCounter}`;
         const { svg } = await window.mermaid.render(renderId, code);
@@ -308,6 +536,92 @@ document.addEventListener('DOMContentLoaded', () => {
       renderBenchmark.textContent = 'Render Failed';
     } finally {
       renderLoading.classList.add('hidden');
+    }
+  }
+
+  // Update AST JSON tab for Terraform
+  function updateTerraformAstView(tfModel, generatedMermaid) {
+    if (!tfModel) return;
+    const astPayload = {
+      engine: "CodeToChart Terraform Parser",
+      language: "HashiCorp Configuration Language (HCL)",
+      stats: {
+        resourceCount: tfModel.resources ? tfModel.resources.length : 0,
+        moduleCount: tfModel.modules ? tfModel.modules.length : 0,
+        relationshipCount: tfModel.relationships ? tfModel.relationships.length : 0
+      },
+      resources: tfModel.resources,
+      modules: tfModel.modules,
+      relationships: tfModel.relationships,
+      compiledMermaid: generatedMermaid
+    };
+    currentAstData = astPayload;
+    astJsonViewer.innerHTML = syntaxHighlightJson(astPayload);
+  }
+
+  // Update Entities tab for Terraform Resources
+  function updateTerraformEntitiesView(tfModel) {
+    if (!tfModel) return;
+
+    metricType.textContent = 'TERRAFORM CLOUD';
+    metricNodes.textContent = tfModel.resources ? tfModel.resources.length : 0;
+    metricEdges.textContent = tfModel.relationships ? tfModel.relationships.length : 0;
+    metricSubgraphs.textContent = tfModel.modules ? tfModel.modules.length : 0;
+    badgeNodesCount.textContent = `${tfModel.resources.length} resources`;
+
+    nodesList.innerHTML = '';
+    const filter = (entitiesSearch.value || '').toLowerCase();
+
+    const filtered = (tfModel.resources || []).filter(r => 
+      r.id.toLowerCase().includes(filter) ||
+      r.type.toLowerCase().includes(filter) ||
+      r.name.toLowerCase().includes(filter) ||
+      (r.category && r.category.toLowerCase().includes(filter))
+    );
+
+    if (filtered.length === 0) {
+      nodesList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.78rem; padding: 12px;">No matching cloud resources found.</div>';
+    } else {
+      filtered.forEach(res => {
+        const card = document.createElement('div');
+        card.className = 'entity-card';
+        card.innerHTML = `
+          <div class="entity-left">
+            <span class="shape-badge" style="background: rgba(132, 79, 186, 0.15); color: #844fba; border-color: rgba(132, 79, 186, 0.3);">${escapeHtml(res.category || res.provider)}</span>
+            <div style="min-width: 0;">
+              <div class="entity-name" title="${escapeHtml(res.id)}">${escapeHtml(res.type)}.${escapeHtml(res.name)}</div>
+              <div class="entity-sub">Provider: ${escapeHtml(res.provider || 'cloud')} • ${Object.keys(res.attributes || {}).length} attrs</div>
+            </div>
+          </div>
+          <span class="badge-studio" style="font-size:0.6rem;">${escapeHtml(res.name)}</span>
+        `;
+        nodesList.appendChild(card);
+      });
+    }
+
+    edgesList.innerHTML = '';
+    const filteredEdges = (tfModel.relationships || []).filter(rel =>
+      rel.from.toLowerCase().includes(filter) ||
+      rel.to.toLowerCase().includes(filter) ||
+      (rel.label && rel.label.toLowerCase().includes(filter))
+    );
+
+    if (filteredEdges.length === 0) {
+      edgesList.innerHTML = '<div style="color: var(--text-muted); font-size: 0.78rem; padding: 12px;">No cloud relationships detected.</div>';
+    } else {
+      filteredEdges.forEach(rel => {
+        const card = document.createElement('div');
+        card.className = 'edge-card';
+        card.innerHTML = `
+          <div class="edge-flow">
+            <span class="edge-node-badge">${escapeHtml(rel.from)}</span>
+            <span class="edge-arrow">──▷</span>
+            <span class="edge-node-badge">${escapeHtml(rel.to)}</span>
+          </div>
+          <div class="edge-label" style="color: #844fba;">Link: "${escapeHtml(rel.label || 'connects')}"</div>
+        `;
+        edgesList.appendChild(card);
+      });
     }
   }
 
@@ -466,8 +780,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const snippet = btn.getAttribute('data-insert');
       const pos = mermaidInput.selectionStart || mermaidInput.value.length;
       const text = mermaidInput.value;
-      const newText = text.slice(0, pos) + (pos > 0 && !text.endsWith('\n') ? '\n    ' : '    ') + snippet + '\n' + text.slice(pos);
-      mermaidInput.value = newText;
+      const before = text.slice(0, pos);
+      const after = text.slice(pos);
+      
+      let insertStr = snippet;
+      if (currentLanguage === 'terraform') {
+        const needsNewline = pos > 0 && !before.endsWith('\n');
+        insertStr = (needsNewline ? '\n\n' : '') + snippet + '\n';
+      } else {
+        const needsNewline = pos > 0 && !before.endsWith('\n');
+        insertStr = (needsNewline ? '\n    ' : '    ') + snippet + '\n';
+      }
+
+      mermaidInput.value = before + insertStr + after;
       mermaidInput.focus();
       scheduleProcess();
     });
@@ -751,8 +1076,41 @@ document.addEventListener('DOMContentLoaded', () => {
   // Template Switcher Change
   templateSelect.addEventListener('change', () => {
     const selectedId = templateSelect.value;
+    
+    // Check Terraform Cloud Architectures
+    if (selectedId === 'terraform_aws_3tier') {
+      switchLanguage('terraform', false);
+      mermaidInput.value = TF_TEMPLATES.aws_3tier;
+      codeBuffers.terraform = TF_TEMPLATES.aws_3tier;
+      resetZoom();
+      scheduleProcess();
+      showToast('Loaded AWS 3-Tier Production Architecture (Terraform)', 'success');
+      return;
+    }
+    if (selectedId === 'terraform_serverless') {
+      switchLanguage('terraform', false);
+      mermaidInput.value = TF_TEMPLATES.serverless;
+      codeBuffers.terraform = TF_TEMPLATES.serverless;
+      resetZoom();
+      scheduleProcess();
+      showToast('Loaded Serverless Microservices (Terraform)', 'success');
+      return;
+    }
+    if (selectedId === 'terraform_azure') {
+      switchLanguage('terraform', false);
+      mermaidInput.value = TF_TEMPLATES.azure_vm;
+      codeBuffers.terraform = TF_TEMPLATES.azure_vm;
+      resetZoom();
+      scheduleProcess();
+      showToast('Loaded Azure Virtual Network & VM (Terraform)', 'success');
+      return;
+    }
+
+    // Mermaid Diagram Presets
     if (examplesMap[selectedId]) {
+      switchLanguage('mermaid', false);
       mermaidInput.value = examplesMap[selectedId];
+      codeBuffers.mermaid = examplesMap[selectedId];
       resetZoom();
       scheduleProcess();
       showToast(`Loaded ${templateSelect.options[templateSelect.selectedIndex].text}`);
@@ -769,90 +1127,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnTfConvert = document.getElementById('btn-tf-convert');
   const tfInput = document.getElementById('tf-input');
   const tfTemplateBtns = document.querySelectorAll('.tf-template-btn');
-
-  const TF_TEMPLATES = {
-    aws_3tier: `resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-}
-
-resource "aws_subnet" "public_1" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-}
-
-resource "aws_subnet" "private_1" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.10.0/24"
-}
-
-resource "aws_security_group" "web_sg" {
-  name   = "web-security-group"
-  vpc_id = aws_vpc.main.id
-}
-
-resource "aws_lb" "alb" {
-  name               = "app-load-balancer"
-  load_balancer_type = "application"
-  subnets            = [aws_subnet.public_1.id]
-}
-
-resource "aws_instance" "web_server" {
-  instance_type          = "t3.medium"
-  subnet_id              = aws_subnet.private_1.id
-  vpc_security_group_ids = [aws_security_group.web_sg.id]
-}
-
-resource "aws_db_instance" "postgres" {
-  engine         = "postgres"
-  instance_class = "db.t3.micro"
-}
-
-resource "aws_s3_bucket" "static_assets" {
-  bucket = "company-app-static-assets"
-}`,
-    serverless: `resource "aws_apigatewayv2_api" "http_api" {
-  name          = "serverless-gateway"
-  protocol_type = "HTTP"
-}
-
-resource "aws_lambda_function" "auth_fn" {
-  function_name = "auth-handler"
-  runtime       = "nodejs20.x"
-}
-
-resource "aws_lambda_function" "order_fn" {
-  function_name = "order-processor"
-  runtime       = "python3.11"
-}
-
-resource "aws_dynamodb_table" "orders" {
-  name         = "orders-table"
-  billing_mode = "PAY_PER_REQUEST"
-}`,
-    azure_vm: `resource "azurerm_virtual_network" "vnet" {
-  name          = "production-vnet"
-  address_space = ["10.0.0.0/16"]
-}
-
-resource "azurerm_subnet" "app_subnet" {
-  name                 = "app-subnet"
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.2.0/24"]
-}
-
-resource "azurerm_network_security_group" "nsg" {
-  name = "app-nsg"
-}
-
-resource "azurerm_linux_virtual_machine" "app_vm" {
-  name = "app-vm-01"
-  size = "Standard_B2s"
-}
-
-resource "azurerm_cosmosdb_account" "db" {
-  name = "cosmos-db-account"
-}`
-  };
 
   if (btnOpenTfModal && tfModal) {
     btnOpenTfModal.addEventListener('click', () => {
@@ -890,7 +1164,11 @@ resource "azurerm_cosmosdb_account" "db" {
             const parsedModel = window.TerraformParser.parseHCL(code);
             const mermaidCode = window.TerraformParser.toMermaid(code);
 
-            mermaidInput.value = mermaidCode;
+            if (currentLanguage === 'terraform') {
+              mermaidInput.value = code;
+            } else {
+              mermaidInput.value = mermaidCode;
+            }
             closeTfModal();
             resetZoom();
             scheduleProcess();

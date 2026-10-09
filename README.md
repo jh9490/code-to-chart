@@ -1,38 +1,43 @@
-# 🧜‍♀️ Mermaid Parser & Visual Studio
+# code-to-chart
 
-A modern Node.js and JavaScript visual tool and graph parser to tokenize Mermaid chart syntax into structured Abstract Syntax Trees (AST), inspect graph topology, and render interactive high-resolution diagrams.
+> **CodeToChart** — Unified Multi-Language Code & Infrastructure to Visual Charts Engine. Convert **Mermaid** diagrams and **Terraform (HCL)** infrastructure code into interactive, high-resolution architecture diagrams with deterministic AST parsing.
 
 ---
 
-## ✨ Features
+## ✨ Overview
 
-- **AST Graph Tokenizer & Parser** (`src/parser.js`):
-  - Extracts nodes, node shapes (rectangles, rounded pills, cylinders, subroutines, diamonds, hexagons, circles), labels, and classes.
-  - Extracts graph edges, arrow styles (`solid`, `dotted`, `thick`), directions, and pipe/inline labels.
-  - Extracts subgraphs, nested groups, sequence messages, class members, ER entities/fields, and pie slices.
-  - Outputs a complete JSON AST with metrics (node counts, edge counts, diagram classification).
-  - Universal design: runs in both **Node.js** and the **browser**.
-- **Interactive Visual Studio**:
-  - Live preview with debounced auto-render and instant error diagnostics.
-  - Dynamic Pan & Zoom canvas (mouse drag, smooth wheel zoom, reset 1:1, fit-to-screen).
+**CodeToChart** enables developers, DevOps, and cloud architects to instantly visualize code and infrastructure without any external AI dependencies. Everything runs locally and deterministically with sub-millisecond execution times.
+
+### 🌟 Supported Input Languages
+1. **🧜 Mermaid (.mmd)**
+   - Flowcharts, System Architecture, Decision Trees
+   - Sequence Diagrams (Sync/Async calls, activations)
+   - Entity Relationship Diagrams (ERD schemas & cardinality)
+   - Class Diagrams (Interfaces, methods, inheritance)
+   - State Diagrams, GitGraphs, and Pie Charts
+2. **☁️ Terraform HCL (.tf)**
+   - Deterministic HCL Block Parser (Brace-counting depth scanner)
+   - Extracts Resources, Providers, Modules, and Cross-Resource References
+   - Categorizes Cloud Services: VPC, Subnet, EC2, RDS Aurora/PostgreSQL, S3, Security Groups, ALB/NLB, Azure VNets/VMs, API Gateways, Lambda Functions
+   - Auto-generates clean, hierarchical cloud architecture diagrams in real time
+
+---
+
+## 🎨 Dual-Mode Interactive Studio
+
+- **Dynamic Editor Transformation**:
+  - **Mermaid Mode**: Crisp violet/indigo styling, `.mmd` indicator, Mermaid quick-syntax snippets (`Node + Edge`, `Decision`, `Database`, `Subgraph`, `Sequence`, `Class`).
+  - **Terraform Mode**: Cloud-themed interface with HashiCorp Purple & Cloud Cyan accents, `.tf` indicator, and Cloud Resource Snippets (`+ VPC`, `+ Subnet`, `+ EC2`, `+ RDS`, `+ S3`, `+ SecGroup`, `+ ALB`).
+  - Preserves code buffers independently when switching between Mermaid and Terraform.
+- **Real-Time Live Compilation**:
+  - Live preview with debounced auto-compilation as you type.
+  - Interactive Pan & Zoom Canvas (mouse drag, smooth wheel zoom, reset, fit-to-screen).
   - High-resolution exports: **Download Vector SVG**, **Download High-Res PNG (2x DPI)**, and **Copy SVG to clipboard**.
-  - Diagram themes: *Dark Slate*, *Classic Light*, *Forest*, *Monochrome Neutral*, *Base*.
-  - Fullscreen canvas mode (`Esc` to exit).
+  - Canvas Styles: Whiteboard Grid, Chalkboard Dark Grid, and Plain White.
+  - Looks: ✏️ Hand-Drawn Sketch (Rough.js), 📐 Classic Crisp, 💎 Neo Modern.
 - **Graph Topology & AST Inspector**:
-  - **Parsed Graph Tab**: Interactive cards showing extracted nodes with shape badges, and connections showing source/target/labels with live search filter.
-  - **AST JSON Tab**: Colorized syntax-highlighted JSON viewer with instant "Copy JSON AST" action.
-- **Curated Diagram Presets**:
-  - Microservices Architecture (*Flowchart*)
-  - OAuth 2.0 Auth Flow (*Sequence Diagram*)
-  - E-Commerce Relational Schema (*ER Diagram*)
-  - Order Processing State Machine (*State Diagram*)
-  - Domain Model (*Class Diagram*)
-  - Feature Branching (*GitGraph*)
-  - Cloud Market Share (*Pie Chart*)
-- **REST API**:
-  - `POST /api/parse`: Parse any Mermaid string into JSON AST.
-  - `GET /api/examples`: Fetch diagram preset catalog.
-  - `GET /api/health`: Health status endpoint.
+  - **Parsed Graph Tab**: Cards displaying extracted nodes, shapes, cloud categories, and relationships with search filter.
+  - **AST JSON Tab**: Structured JSON model of either the Mermaid AST or Terraform Architecture Model.
 
 ---
 
@@ -47,14 +52,14 @@ npm install
 ```bash
 npm start
 ```
-The application will launch on:
+The studio launches on:
 👉 **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
-## 📡 REST API Usage
+## 📡 REST API Endpoints
 
-### Parse Mermaid Syntax to AST
+### 1. Parse Mermaid Syntax to AST
 ```bash
 curl -X POST http://localhost:3000/api/parse \
   -H "Content-Type: application/json" \
@@ -63,53 +68,36 @@ curl -X POST http://localhost:3000/api/parse \
   }'
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "valid": true,
-    "type": "flowchart",
-    "direction": "TD",
-    "ast": {
-      "type": "flowchart",
-      "direction": "TD",
-      "nodes": [
-        { "id": "A", "label": "Web App", "shape": "rectangle", "subgraph": null, "classes": [] },
-        { "id": "B", "label": "API Gateway", "shape": "round", "subgraph": null, "classes": [] },
-        { "id": "C", "label": "PostgreSQL DB", "shape": "cylinder", "subgraph": null, "classes": [] }
-      ],
-      "edges": [
-        { "source": "A", "target": "B", "label": "HTTPS", "type": "solid", "arrow": "directed" },
-        { "source": "B", "target": "C", "label": null, "type": "solid", "arrow": "directed" }
-      ],
-      "subgraphs": []
-    },
-    "stats": {
-      "nodeCount": 3,
-      "edgeCount": 2,
-      "subgraphCount": 0
-    }
-  }
-}
+### 2. Parse Terraform HCL to Architecture Chart
+```bash
+curl -X POST http://localhost:3000/api/terraform/parse \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hcl": "resource \"aws_vpc\" \"main\" {\n  cidr_block = \"10.0.0.0/16\"\n}\nresource \"aws_subnet\" \"public\" {\n  vpc_id = aws_vpc.main.id\n  cidr_block = \"10.0.1.0/24\"\n}"
+  }'
 ```
 
 ---
 
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```
-mairmaid-parser/
-├── package.json          # Dependencies & scripts
-├── server.js             # Express server & API endpoints
+code-to-chart/
+├── package.json               # Package definition & scripts
+├── server.js                  # Express backend & API endpoints
 ├── src/
-│   ├── parser.js         # Universal Mermaid AST parser (Node.js & browser)
-│   └── examples.js       # Curated sample diagram presets
+│   ├── parser.js              # Universal Mermaid AST parser (Node & Browser)
+│   ├── terraform-parser.js    # Deterministic Terraform HCL to Diagram compiler
+│   └── examples.js            # Diagram & cloud architecture presets
 └── public/
-    ├── index.html        # Modern HTML5 studio interface
+    ├── index.html             # CodeToChart studio layout & dual switcher
     ├── css/
-    │   └── style.css     # Vanilla CSS design system (dark glassmorphism, animations)
+    │   └── style.css          # Vanilla CSS design system & mode styling
     └── js/
-        └── app.js        # Client controller (pan/zoom, AST inspector, exports)
+        └── app.js             # Dual-engine controller & pan/zoom canvas
 ```
-# mermaid-chart-parser
+
+---
+
+## 📄 License
+ISC

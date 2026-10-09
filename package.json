@@ -1,8 +1,8 @@
 {
-  "name": "mairmaid-parser",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "code-to-chart",
+  "version": "2.0.0",
+  "description": "CodeToChart: Deterministic Multi-Language Visual Diagram & Cloud Architecture Engine (Mermaid & Terraform HCL)",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"

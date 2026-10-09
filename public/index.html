@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mermaid Parser & Visual Studio | Node.js Diagram Engine</title>
-  <meta name="description" content="A powerful Node.js and JavaScript visual tool to parse Mermaid charts into structured AST JSON, inspect graph topology, and render interactive high-resolution diagrams.">
+  <title>CodeToChart | Unified Code & Architecture to Chart Studio</title>
+  <meta name="description" content="CodeToChart - Convert Mermaid diagrams and Terraform HCL infrastructure code into interactive high-resolution visual architecture charts with deterministic AST parsing.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Kalam:wght@400;700&family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,14 +16,25 @@
     <!-- Top Navigation Bar -->
     <header class="app-header">
       <div class="header-brand">
-        <div class="brand-logo-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        <div class="brand-logo-icon" title="CodeToChart">
+          <svg width="24" height="24" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Code brackets -->
+            <path d="M11 10L4 18L11 26" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Bridge flow arrow -->
+            <path d="M16 18H20M20 18L18 15M20 18L18 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Diagram Nodes & Edge -->
+            <circle cx="28" cy="11" r="3.2" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="2.4"/>
+            <circle cx="28" cy="25" r="3.2" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="2.4"/>
+            <path d="M21 18L25.2 12.8M21 18L25.2 23.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="brand-text">
-          <h1 class="brand-title">Mermaid Parser <span class="badge-studio">Studio Pro</span></h1>
-          <span class="brand-subtitle">Interactive Diagram Engine & AST Inspector</span>
+          <h1 class="brand-title">CodeToChart <span class="badge-studio">v2.0</span></h1>
+          <span class="brand-subtitle">Code & Cloud Infrastructure to Visual Charts</span>
+        </div>
+        <div class="brand-engines-pills">
+          <span class="engine-pill engine-mermaid">🧜 Mermaid</span>
+          <span class="engine-pill engine-terraform">☁️ Terraform</span>
         </div>
       </div>
 
@@ -40,15 +51,21 @@
           <label for="template-select" class="control-label">Preset:</label>
           <select id="template-select" class="custom-select" title="Choose template">
             <option value="" disabled>Select diagram template...</option>
-            <option value="sketch_flow" selected>✏️ Hand-Drawn Flow (Sketch)</option>
-            <option value="terraform_architecture">☁️ Terraform AWS Architecture</option>
-            <option value="microservices">Cloud Microservices Architecture</option>
-            <option value="oauth2_sequence">OAuth 2.0 Auth Flow (Sequence)</option>
-            <option value="ecommerce_erd">E-Commerce Schema (ERD)</option>
-            <option value="order_lifecycle">Order Processing (State)</option>
-            <option value="class_architecture">Domain Model (Class)</option>
-            <option value="git_workflow">Git Flow (GitGraph)</option>
-            <option value="market_pie">Market Share (Pie Chart)</option>
+            <optgroup label="✨ Whiteboard & Flow">
+              <option value="sketch_flow" selected>✏️ Hand-Drawn Flow (Sketch)</option>
+              <option value="microservices">Cloud Microservices Architecture</option>
+              <option value="oauth2_sequence">OAuth 2.0 Auth Flow (Sequence)</option>
+              <option value="ecommerce_erd">E-Commerce Schema (ERD)</option>
+              <option value="order_lifecycle">Order Processing (State)</option>
+              <option value="class_architecture">Domain Model (Class)</option>
+              <option value="git_workflow">Git Flow (GitGraph)</option>
+              <option value="market_pie">Market Share (Pie Chart)</option>
+            </optgroup>
+            <optgroup label="☁️ Terraform Cloud Architectures">
+              <option value="terraform_aws_3tier">☁️ AWS 3-Tier Production Architecture</option>
+              <option value="terraform_serverless">⚡ Serverless API & Lambda Microservices</option>
+              <option value="terraform_azure">🌐 Azure VNet & Virtual Machine</option>
+            </optgroup>
           </select>
         </div>
 
@@ -94,40 +111,73 @@
     <main class="studio-container">
       
       <!-- Left Panel: Editor & Code Tools -->
-      <section class="panel editor-panel" id="editor-section">
+      <section class="panel editor-panel mode-mermaid" id="editor-section">
         <div class="panel-header">
           <div class="panel-title-area">
-            <span class="panel-icon">📝</span>
-            <h2 class="panel-heading">Mermaid Editor</h2>
+            <!-- Language Mode Segmented Switcher -->
+            <div class="lang-mode-switcher" id="lang-mode-switcher" role="tablist" aria-label="Select Editor Language">
+              <button type="button" id="btn-mode-mermaid" class="lang-mode-btn active" data-lang="mermaid" title="Mermaid Diagram Mode">
+                <span class="lang-btn-icon">🧜</span>
+                <span class="lang-btn-text">Mermaid</span>
+                <span class="lang-btn-ext">.mmd</span>
+              </button>
+              <button type="button" id="btn-mode-terraform" class="lang-mode-btn" data-lang="terraform" title="Terraform Infrastructure HCL Mode">
+                <span class="lang-btn-icon">☁️</span>
+                <span class="lang-btn-text">Terraform</span>
+                <span class="lang-btn-ext">.tf</span>
+              </button>
+            </div>
+
             <span id="syntax-status-badge" class="status-badge status-valid">
-              <span class="status-dot"></span> <span id="status-text">Valid Syntax</span>
+              <span class="status-dot"></span> <span id="status-text">Mermaid AST Ready</span>
             </span>
           </div>
 
           <div class="editor-header-actions">
-            <button id="btn-open-tf-modal" class="btn btn-secondary btn-sm" title="Import Terraform / HCL code to Architecture diagram">
+            <!-- Cloud Templates Dropdown Button (Visible in Terraform mode) -->
+            <button id="btn-tf-presets" class="btn btn-secondary btn-sm tf-only-control hidden" title="Select Cloud Architecture Template">
+              ☁️ Cloud Templates
+            </button>
+            <!-- Import Terraform Modal Button (Visible in Mermaid mode) -->
+            <button id="btn-open-tf-modal" class="btn btn-secondary btn-sm mmd-only-control" title="Import Terraform / HCL code into Mermaid">
               ☁️ Import Terraform
             </button>
-            <button id="btn-beautify" class="btn-icon" title="Format indentation">
+            <button id="btn-beautify" class="btn-icon" title="Format code indentation">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
             </button>
             <button id="btn-clear" class="btn-icon" title="Clear editor">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
-            <button id="btn-copy-code" class="btn-icon" title="Copy Mermaid code">
+            <button id="btn-copy-code" class="btn-icon" title="Copy code">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
           </div>
         </div>
 
-        <!-- Quick Insert Snippets Toolbar -->
-        <div class="snippets-toolbar">
-          <span class="snippets-label">Insert:</span>
-          <button class="snippet-btn" data-insert="A[Box Node] --> B[Target Node]">Node + Edge</button>
-          <button class="snippet-btn" data-insert="Decision{Is Valid?} -->|Yes| OK[Success]&#10;Decision -->|No| Fail[Error]">Decision</button>
-          <button class="snippet-btn" data-insert="DB[(Database Cluster)]">Database</button>
-          <button class="snippet-btn" data-insert="subgraph GroupName [&quot;Group Title&quot;]&#10;    ItemA&#10;    ItemB&#10;end">Subgraph</button>
-          <button class="snippet-btn" data-insert="Alice->>Bob: Sync Request&#10;Bob-->>Alice: Async Response">Sequence</button>
+        <!-- Quick Insert Snippets Toolbar: Dynamically displayed based on active mode -->
+        <div class="snippets-toolbar" id="snippets-toolbar">
+          <!-- Mermaid Snippets -->
+          <div class="snippets-group" id="snippets-mermaid">
+            <span class="snippets-label">Mermaid:</span>
+            <button class="snippet-btn" data-insert="A[Box Node] --> B[Target Node]">Node + Edge</button>
+            <button class="snippet-btn" data-insert="Decision{Is Valid?} -->|Yes| OK[Success]&#10;Decision -->|No| Fail[Error]">Decision</button>
+            <button class="snippet-btn" data-insert="DB[(Database Cluster)]">Database</button>
+            <button class="snippet-btn" data-insert="subgraph GroupName [&quot;Group Title&quot;]&#10;    ItemA&#10;    ItemB&#10;end">Subgraph</button>
+            <button class="snippet-btn" data-insert="Alice->>Bob: Sync Request&#10;Bob-->>Alice: Async Response">Sequence</button>
+            <button class="snippet-btn" data-insert="class Order {&#10;    +String id&#10;    +process()&#10;}">Class</button>
+          </div>
+
+          <!-- Terraform Cloud Resource Snippets -->
+          <div class="snippets-group hidden" id="snippets-terraform">
+            <span class="snippets-label tf-label">HCL Resources:</span>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_vpc&quot; &quot;main&quot; {&#10;  cidr_block = &quot;10.0.0.0/16&quot;&#10;}">+ VPC</button>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_subnet&quot; &quot;public_1&quot; {&#10;  vpc_id     = aws_vpc.main.id&#10;  cidr_block = &quot;10.0.1.0/24&quot;&#10;}">+ Subnet</button>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_instance&quot; &quot;app_server&quot; {&#10;  instance_type = &quot;t3.medium&quot;&#10;  subnet_id     = aws_subnet.public_1.id&#10;}">+ EC2</button>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_db_instance&quot; &quot;postgres&quot; {&#10;  engine         = &quot;postgres&quot;&#10;  instance_class = &quot;db.t3.micro&quot;&#10;}">+ RDS</button>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_s3_bucket&quot; &quot;assets&quot; {&#10;  bucket = &quot;cloud-app-assets&quot;&#10;}">+ S3</button>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_security_group&quot; &quot;web_sg&quot; {&#10;  name   = &quot;web-security-group&quot;&#10;  vpc_id = aws_vpc.main.id&#10;}">+ SecGroup</button>
+            <button class="snippet-btn tf-snippet-btn" data-insert="resource &quot;aws_lb&quot; &quot;alb&quot; {&#10;  name               = &quot;app-load-balancer&quot;&#10;  load_balancer_type = &quot;application&quot;&#10;}">+ ALB</button>
+          </div>
         </div>
 
         <!-- Code Editor Area with Line Numbers -->
@@ -295,14 +345,16 @@
     <footer class="app-footer">
       <div class="footer-left">
         <span class="indicator-dot"></span>
-        <span>Node.js Backend & Client Parser Engine Active</span>
+        <span>CodeToChart Engine Active (Mermaid AST + Terraform HCL)</span>
         <span class="footer-divider">•</span>
         <span id="render-benchmark">Ready</span>
       </div>
       <div class="footer-right">
-        <span>Mermaid.js v11</span>
+        <span>Deterministic Compiler</span>
         <span class="footer-divider">•</span>
-        <span>Vanilla CSS & JavaScript</span>
+        <span>Mermaid.js v11 & HCL Parser</span>
+        <span class="footer-divider">•</span>
+        <span>Vanilla CSS & JS</span>
       </div>
     </footer>
 

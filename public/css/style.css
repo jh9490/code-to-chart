@@ -34,10 +34,10 @@ body.theme-miro {
   --accent-hover: #1d4ed8;
   --accent-light: #eff6ff;
 
-  --brand-bg: #ffd02f; /* Miro bright yellow */
-  --brand-color: #050038;
-  --gradient-brand: linear-gradient(135deg, #ffd02f 0%, #ffbb00 100%);
-  --glow-brand: 0 2px 10px rgba(255, 208, 47, 0.45);
+  --brand-bg: #4f46e5;
+  --brand-color: #ffffff;
+  --gradient-brand: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  --glow-brand: 0 3px 14px rgba(99, 102, 241, 0.4);
 
   --status-valid-bg: #ecfdf5;
   --status-valid-border: #a7f3d0;
@@ -203,7 +203,7 @@ html, body {
 }
 
 .brand-title {
-  font-size: 1.02rem;
+  font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-main);
@@ -217,23 +217,67 @@ html, body {
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px 7px;
-  background: #fef08a;
-  border: 1px solid #fde047;
-  color: #854d0e;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #4f46e5;
   border-radius: var(--radius-pill);
   letter-spacing: 0.04em;
 }
 
 body.theme-dark .badge-studio {
   background: rgba(99, 102, 241, 0.25);
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: rgba(99, 102, 241, 0.5);
   color: #a5b4fc;
 }
 
 .brand-subtitle {
-  font-size: 0.73rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+/* Supported Engines Pills in Header */
+.brand-engines-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+}
+
+.engine-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.02em;
+  transition: all var(--transition-fast);
+}
+
+.engine-mermaid {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+body.theme-dark .engine-mermaid {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.engine-terraform {
+  background: rgba(132, 79, 186, 0.12);
+  color: #7033a8;
+  border: 1px solid rgba(132, 79, 186, 0.3);
+}
+
+body.theme-dark .engine-terraform {
+  background: rgba(132, 79, 186, 0.25);
+  color: #d8b4fe;
+  border-color: rgba(132, 79, 186, 0.45);
 }
 
 .header-controls {
@@ -387,6 +431,211 @@ body.theme-dark .badge-studio {
   color: var(--text-main);
 }
 
+/* ==========================================================
+   LANGUAGE MODE SWITCHER (MERMAID vs TERRAFORM)
+   ========================================================== */
+
+.lang-mode-switcher {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-dark .lang-mode-switcher {
+  background: rgba(13, 18, 29, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.lang-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-ui);
+}
+
+.lang-mode-btn:hover {
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.theme-dark .lang-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lang-btn-ext {
+  font-family: var(--font-code);
+  font-size: 0.65rem;
+  opacity: 0.75;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+body.theme-dark .lang-btn-ext {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Active Mermaid tab button */
+.lang-mode-btn[data-lang="mermaid"].active {
+  background: #ffffff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+  box-shadow: 0 1px 4px rgba(79, 70, 229, 0.15);
+}
+
+.lang-mode-btn[data-lang="mermaid"].active .lang-btn-ext {
+  background: #ede9fe;
+  color: #4f46e5;
+}
+
+body.theme-dark .lang-mode-btn[data-lang="mermaid"].active {
+  background: rgba(99, 102, 241, 0.25);
+  color: #c7d2fe;
+  border-color: rgba(99, 102, 241, 0.55);
+  box-shadow: 0 0 14px rgba(99, 102, 241, 0.25);
+}
+
+body.theme-dark .lang-mode-btn[data-lang="mermaid"].active .lang-btn-ext {
+  background: rgba(99, 102, 241, 0.45);
+  color: #e0e7ff;
+}
+
+/* Active Terraform tab button */
+.lang-mode-btn[data-lang="terraform"].active {
+  background: #ffffff;
+  color: #7033a8;
+  border-color: #d8b4fe;
+  box-shadow: 0 1px 4px rgba(132, 79, 186, 0.18);
+}
+
+.lang-mode-btn[data-lang="terraform"].active .lang-btn-ext {
+  background: #f3e8ff;
+  color: #844fba;
+}
+
+body.theme-dark .lang-mode-btn[data-lang="terraform"].active {
+  background: rgba(132, 79, 186, 0.28);
+  color: #f3e8ff;
+  border-color: rgba(132, 79, 186, 0.55);
+  box-shadow: 0 0 14px rgba(132, 79, 186, 0.28);
+}
+
+body.theme-dark .lang-mode-btn[data-lang="terraform"].active .lang-btn-ext {
+  background: rgba(132, 79, 186, 0.45);
+  color: #fae8ff;
+}
+
+/* ==========================================================
+   DYNAMIC EDITOR VIEW & STYLE (MERMAID vs TERRAFORM)
+   ========================================================== */
+
+.editor-panel {
+  position: relative;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+}
+
+.editor-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 20;
+  transition: background 0.3s ease;
+}
+
+/* Mermaid Editor Style */
+.editor-panel.mode-mermaid::before {
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+}
+
+/* Terraform Editor Style - Cloud Visual Shift */
+.editor-panel.mode-terraform {
+  border-right-color: rgba(132, 79, 186, 0.35);
+  box-shadow: inset -2px 0 20px rgba(132, 79, 186, 0.05);
+}
+
+.editor-panel.mode-terraform::before {
+  background: linear-gradient(90deg, #844fba 0%, #0284c7 50%, #00c7b7 100%);
+  height: 3px;
+}
+
+.editor-panel.mode-terraform .panel-header {
+  background: linear-gradient(to right, rgba(132, 79, 186, 0.08), rgba(2, 132, 199, 0.05), var(--bg-surface-elevated));
+  border-bottom-color: rgba(132, 79, 186, 0.25);
+}
+
+.editor-panel.mode-terraform #syntax-status-badge {
+  background: rgba(132, 79, 186, 0.1);
+  color: #7033a8;
+  border-color: rgba(132, 79, 186, 0.3);
+}
+
+body.theme-dark .editor-panel.mode-terraform #syntax-status-badge {
+  background: rgba(132, 79, 186, 0.22);
+  color: #d8b4fe;
+  border-color: rgba(132, 79, 186, 0.45);
+}
+
+.editor-panel.mode-terraform #syntax-status-badge .status-dot {
+  background: #00c7b7;
+  box-shadow: 0 0 8px rgba(0, 199, 183, 0.6);
+}
+
+.editor-panel.mode-terraform .line-numbers {
+  background: rgba(132, 79, 186, 0.03);
+  border-right-color: rgba(132, 79, 186, 0.22);
+  color: #844fba;
+  opacity: 0.85;
+}
+
+body.theme-dark .editor-panel.mode-terraform .line-numbers {
+  background: rgba(132, 79, 186, 0.08);
+  border-right-color: rgba(132, 79, 186, 0.3);
+  color: #c084fc;
+}
+
+.editor-panel.mode-terraform .code-textarea {
+  background: rgba(2, 132, 199, 0.015);
+}
+
+body.theme-dark .editor-panel.mode-terraform .code-textarea {
+  background: #090c14;
+}
+
+.editor-panel.mode-terraform .code-textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px rgba(132, 79, 186, 0.35);
+}
+
+.editor-panel.mode-terraform .code-textarea::selection {
+  background: rgba(132, 79, 186, 0.22);
+}
+
+body.theme-dark .editor-panel.mode-terraform .code-textarea::selection {
+  background: rgba(132, 79, 186, 0.4);
+}
+
+.editor-panel.mode-terraform .snippets-toolbar {
+  background: linear-gradient(to right, rgba(132, 79, 186, 0.06), rgba(2, 132, 199, 0.04), var(--bg-surface-elevated));
+  border-bottom-color: rgba(132, 79, 186, 0.22);
+}
+
 /* Status Badges */
 .status-badge {
   display: inline-flex;
@@ -483,6 +732,61 @@ body.theme-dark .badge-studio {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
   transform: translateY(-1px);
+}
+
+/* Snippets Group Container */
+.snippets-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.snippets-group.hidden {
+  display: none !important;
+}
+
+/* Terraform Resource Snippets */
+.tf-label {
+  color: #7033a8 !important;
+  font-weight: 800;
+}
+
+body.theme-dark .tf-label {
+  color: #c084fc !important;
+}
+
+.tf-snippet-btn {
+  background: rgba(132, 79, 186, 0.08);
+  border-color: rgba(132, 79, 186, 0.28);
+  color: #6b21a8;
+  font-weight: 600;
+}
+
+body.theme-dark .tf-snippet-btn {
+  background: rgba(132, 79, 186, 0.18);
+  border-color: rgba(132, 79, 186, 0.4);
+  color: #e9d5ff;
+}
+
+.tf-snippet-btn:hover {
+  background: rgba(132, 79, 186, 0.18);
+  border-color: #844fba;
+  color: #581c87;
+  box-shadow: 0 0 10px rgba(132, 79, 186, 0.25);
+  transform: translateY(-1px);
+}
+
+body.theme-dark .tf-snippet-btn:hover {
+  background: rgba(132, 79, 186, 0.35);
+  border-color: #c084fc;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35);
+}
+
+/* Visibility Control Helpers */
+.tf-only-control.hidden,
+.mmd-only-control.hidden {
+  display: none !important;
 }
 
 /* ==========================================================
